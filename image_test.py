@@ -1,84 +1,71 @@
-#from iterative_function import *
 from rank_generalisation2 import *
 import time
-#LOAD IMAGE
+import numpy as np
 from PIL import Image
-# import peg
-import pickle
+import matplotlib.pyplot as plt
 
+# Function to handle training or testing mode
+def main(training_mode=True):
+    # Load Image
+    im = np.array(Image.open('A.png').convert('L'))  # Load grayscale image
+    print("Dimensions de l'image :", im.shape)
 
-im = array(Image.open('A.png').convert('L')) #you can pass multiple arguments in single line
+    # Prepare input sentence
+    sentence = im.reshape(im.shape[0] * im.shape[1])
+    print("Sentence :", sentence)
 
-#hist(reshh_ldpce(im,(512*512,1)),100)
-#(216,): [0, 255]
+    # Parameters
+    seq_res = 256
+    seq_len = len(sentence)
+    num_permutation = im.shape[0] * 8
+    num_link = im.shape[0] * 2
+    sigma_range = seq_res // 4
+    print("num_link", num_link)
 
-# full image decoding is very slow
-# img_dim=512
-# sentence = reshape(im,(img_dim*img_dim))
+    # Visualize Input Image
+    plt.figure()
+    plt.imshow(im[::-1], cmap='gray', origin='lower', aspect='auto', interpolation='none')
+    plt.show()
 
-# seq_res=256
-# seq_len=len(sentence)
-# num_permutation=512*8
-# num_link=512
-# sigma_range=64
+    # Initialize weight matrices
+    W1, W2 = initialize_weights(num_features=seq_res, num_classes=2)
 
-# partial image decoding
-img_dim= im.shape[0] #256*2
-print("Dimensions de l'image :", im.shape)
+    # Generate H matrix for connections
+    H = h_ldpc(seq_len, num_permutation, num_link)
 
-sentence = reshape(im,(im.shape[0]*im.shape[1])).flatten()
-print("Sentence :", sentence)
+    if training_mode:
+        # Training Mode
+        print("Training Mode")
 
-seq_res= 256
-seq_len= len(sentence)
-num_permutation=im.shape[0]*8
-num_link= im.shape[0]*2 #im.shape[1] #256*2
-sigma_range=seq_res//4
-print("num_link", num_link)
+        # Prepare Dataset
+        num_samples = 100  # Number of samples in the dataset
+        X = np.random.rand(num_samples, seq_res)  # Random input data
+        y_true = np.eye(2)[np.random.randint(0, 2, size=num_samples)]  # Random one-hot labels
 
+        # Train the model
+        epochs = 20
+        learning_rate = 0.01
+        W1, W2, losses = train_model(X, y_true, W1, W2, learning_rate, epochs)
 
-figure()
-imshow(reshape(sentence[::-1],(im.shape[0],im.shape[1])), cmap='gray', origin='lower', aspect='auto',interpolation='none')
+        # Plot Training Loss
+        plt.plot(range(1, epochs + 1), losses)
+        plt.title("Training Loss")
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.show()
+    else:
+        # Testing Mode
+        print("Testing Mode")
 
-t0=time.time()
+        # Process through the updated model
+        output = iterative_connection_with_weights(seq_res, seq_len, num_permutation, sigma_range, sentence, num_link, H, W1, W2)
 
-H = h_ldpc(seq_len, num_permutation, num_link)
-#H = h_gallager(seq_len, num_permutation, num_link)
+        # Visualize Outputs
+        plt.figure()
+        # plt.imshow(output.reshape(im.shape[0], im.shape[1]), cmap='gray', origin='lower', aspect='auto', interpolation='none')
+        plt.title("Output Image")
+        plt.show()
 
-# for PEG matrices
-store_matrix = False
-if store_matrix:
-    #compute the peg structure which contains the matrix H
-    pp= peg.peg(seq_len, num_permutation, [num_link]*seq_len)
-    pp.progressive_edge_growth()
-    file=open( "H_peg_%d_%d_%d.p" %(seq_len,num_permutation,num_link),"wb")
-    pickle.dump(pp.H, file)
-    file.close()
-
-# Initialize weight matrices
-W1, W2 = initialize_weights(num_features=seq_res, num_classes=2)
-
-# Generate H matrix for connections
-H = h_ldpc(seq_len, num_permutation, num_link)
-
-# Process through the updated model
-output = iterative_connection_with_weights(seq_res, seq_len, num_permutation, sigma_range, sentence, num_link, H, W1, W2)
-
-
-# file=open( "H_peg_%d_%d_%d.p" %(seq_len,num_permutation,num_link),"rb")
-# H=pickle.load()
-# file.close()
-
-# output=iterative_connection(seq_res,seq_len,num_permutation,sigma_range,sentence,num_link,H)
-
-#output=iterative_rank(seq_res,seq_len,num_permutation,sigma_range,sentence)
-
-t1=time.time()
-print("Time", t1-t0)
-print("Error re. true seq", mean(pow(output[1]-output[0],2)))
-
-# figure()
-# imshow(reshape(output[1][::-1],(im.shape[0],im.shape[1])), cmap='gray', origin='lower', aspect='auto',interpolation='none')
-
-print(output[0])
-print(output[1])
+if __name__ == "__main__":
+    # Set training_mode to True for training, False for testing
+    main(training_mode=True)

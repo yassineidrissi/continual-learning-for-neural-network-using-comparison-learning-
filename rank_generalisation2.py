@@ -201,3 +201,44 @@ def iterative_connection_with_weights(seq_res, seq_len, num_permutation, sigma_r
 #     probabilities = np.exp(class_scores) / np.sum(np.exp(class_scores), axis=1, keepdims=True)
 #     print(probabilities)
     return probabilities
+
+def train_model(X, y, W1, W2, learning_rate=0.01, epochs=10):
+    """
+    Train the model using gradient descent.
+    Args:
+    - X: Input data (e.g., sentences or feature vectors).
+    - y: True labels (one-hot encoded for classification tasks).
+    - W1: Weight matrix for the first layer.
+    - W2: Weight matrix for the second layer.
+    - learning_rate: Learning rate for gradient descent.
+    - epochs: Number of training epochs.
+
+    Returns:
+    - W1, W2: Updated weight matrices.
+    - losses: List of losses per epoch.
+    """
+    losses = []
+    for epoch in range(epochs):
+        # Forward pass
+        quantized_features = np.dot(X, W1)  # First layer
+        class_scores = np.dot(quantized_features, W2)  # Second layer
+        probabilities = stable_softmax(class_scores)
+
+        # Compute loss (Cross-Entropy)
+        loss = -np.mean(np.sum(y * np.log(probabilities + 1e-8), axis=1))
+        losses.append(loss)
+
+        # Backpropagation
+        grad_class_scores = probabilities - y
+        grad_W2 = np.dot(quantized_features.T, grad_class_scores)
+        grad_quantized_features = np.dot(grad_class_scores, W2.T)
+        grad_W1 = np.dot(X.T, grad_quantized_features)
+
+        # Update weights
+        W2 -= learning_rate * grad_W2
+        W1 -= learning_rate * grad_W1
+
+        # Print progress
+        print(f"Epoch {epoch + 1}/{epochs}, Loss: {loss:.4f}")
+
+    return W1, W2, losses
