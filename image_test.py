@@ -3,12 +3,13 @@ from rank_generalisation2 import *
 import time
 #LOAD IMAGE
 from PIL import Image
-import peg
+# import peg
 import pickle
 
-im = array(Image.open('Lenna.png').convert('L')) #you can pass multiple arguments in single line
 
-#hist(reshape(im,(512*512,1)),100)
+im = array(Image.open('A.png').convert('L')) #you can pass multiple arguments in single line
+
+#hist(reshh_ldpce(im,(512*512,1)),100)
 #(216,): [0, 255]
 
 # full image decoding is very slow
@@ -22,18 +23,22 @@ im = array(Image.open('Lenna.png').convert('L')) #you can pass multiple argument
 # sigma_range=64
 
 # partial image decoding
-img_dim=64
-sentence = reshape(im[256-32:256+32,256-32:256+32],(img_dim*img_dim))
+img_dim= im.shape[0] #256*2
+print("Dimensions de l'image :", im.shape)
 
-seq_res=256
-seq_len=len(sentence)
-num_permutation=64*8
-num_link=64
+sentence = reshape(im,(im.shape[0]*im.shape[1])).flatten()
+print("Sentence :", sentence)
+
+seq_res= 256
+seq_len= len(sentence)
+num_permutation=im.shape[0]*8
+num_link= im.shape[0]*2 #im.shape[1] #256*2
 sigma_range=seq_res//4
+print("num_link", num_link)
+
 
 figure()
-imshow(reshape(sentence[::-1],(img_dim,img_dim)), cmap='gray', origin='lower', aspect='auto',interpolation='none')
-
+imshow(reshape(sentence[::-1],(im.shape[0],im.shape[1])), cmap='gray', origin='lower', aspect='auto',interpolation='none')
 
 t0=time.time()
 
@@ -50,11 +55,21 @@ if store_matrix:
     pickle.dump(pp.H, file)
     file.close()
 
+# Initialize weight matrices
+W1, W2 = initialize_weights(num_features=seq_res, num_classes=2)
+
+# Generate H matrix for connections
+H = h_ldpc(seq_len, num_permutation, num_link)
+
+# Process through the updated model
+output = iterative_connection_with_weights(seq_res, seq_len, num_permutation, sigma_range, sentence, num_link, H, W1, W2)
+
+
 # file=open( "H_peg_%d_%d_%d.p" %(seq_len,num_permutation,num_link),"rb")
 # H=pickle.load()
 # file.close()
-    
-output=iterative_connection(seq_res,seq_len,num_permutation,sigma_range,sentence,num_link,H)
+
+# output=iterative_connection(seq_res,seq_len,num_permutation,sigma_range,sentence,num_link,H)
 
 #output=iterative_rank(seq_res,seq_len,num_permutation,sigma_range,sentence)
 
@@ -62,8 +77,8 @@ t1=time.time()
 print("Time", t1-t0)
 print("Error re. true seq", mean(pow(output[1]-output[0],2)))
 
-figure()
-imshow(reshape(output[1][::-1],(img_dim,img_dim)), cmap='gray', origin='lower', aspect='auto',interpolation='none')
+# figure()
+# imshow(reshape(output[1][::-1],(im.shape[0],im.shape[1])), cmap='gray', origin='lower', aspect='auto',interpolation='none')
 
-#print(output[0])
-#print(output[1])
+print(output[0])
+print(output[1])
