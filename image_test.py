@@ -1,6 +1,7 @@
 from rank_generalisation2 import *
 import time
 import numpy as np
+import pickle
 from PIL import Image
 import matplotlib.pyplot as plt
 
