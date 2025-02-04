@@ -239,3 +239,19 @@ def load_weights(filename='weights.pkl'):
         weights = pickle.load(f)
     print(f"Weights loaded from {filename}")
     return weights['W1'], weights['W2']
+
+# Function to load CIFAR-10 data batch
+def load_cifar10_batch(filename):
+    with open(filename, 'rb') as f:
+        batch = pickle.load(f, encoding='bytes')
+        data = batch[b'data']  # Image data (numpy array, shape: [10000, 3072])
+        labels = batch[b'labels']  # Class labels (list, shape: [10000])
+    return data, labels
+
+# Function to preprocess CIFAR-10 data
+def preprocess_cifar10(data, labels, num_classes=10):
+    # Normalize pixel values to range [0, 1]
+    data = data / 255.0
+    # Convert labels to one-hot encoding
+    one_hot_labels = np.eye(num_classes)[labels]
+    return data, one_hot_labels
