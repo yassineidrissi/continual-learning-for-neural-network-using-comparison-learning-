@@ -226,3 +226,16 @@ def train_model(X, y, W1, W2, learning_rate=0.01, epochs=10):
 
         print(f"Epoch {epoch + 1}/{epochs}, Loss: {loss:.4f}")
     return W1, W2, losses
+
+# Function to save weights
+def save_weights(W1, W2, filename='weights.pkl'):
+    with open(filename, 'wb') as f:
+        pickle.dump({'W1': W1, 'W2': W2}, f)
+        print(f"Weights saved to {filename}")
+
+# Function to load weights
+def load_weights(filename='weights.pkl'):
+    with open(filename, 'rb') as f:
+        weights = pickle.load(f)
+    print(f"Weights loaded from {filename}")
+    return weights['W1'], weights['W2']
