@@ -149,7 +149,7 @@ def run_experiment_v2(image_path,
 ###############################################################################
 
 def main():
-    image_path = '64.png'  # Replace with your actual image path
+    image_path = 'srcs/64.png'  # Replace with your actual image path
 
     # Example parameter sets you might vary:
     # (Feel free to comment out the ones you don't need.)
