@@ -3,7 +3,7 @@
 from matplotlib import *
 from matplotlib.pylab import *
 from PIL import Image
-import numpy as np
+
 def gaussian(x, mu, sig):
     return exp(-pow(x - mu, 2.) / (2 * pow(sig, 2.)))
 
@@ -19,7 +19,7 @@ def h_ldpc(seq_len, num_permutation, num_link):
                 H[idx,:]=permutation(h)
 
         return H
-
+        
 # function that constructs a matrix of connections as defined by Gallager for the LDPC codes
 # n is the length of the sequence
 # k is the number of synapses per neuron
@@ -119,7 +119,6 @@ def iterative_connection(seq_res,seq_len,num_permutation,sigma_range,sentence,nu
                     # remet la sequence dans le bon ordre
                     # # only the items connected to the neuron are modified
                     solution = edges[pk][ranks_output[pk,:]]
-                #     print(pk," edges details ", edges[pk][ranks_output[pk,:]])#, "and eges ", edges, "\n")
                     s_trial[pk,solution] = s_hat_perm_sort
                     
                 # 7.2b VN operation Variable Nodes 
@@ -141,117 +140,15 @@ def iterative_connection(seq_res,seq_len,num_permutation,sigma_range,sentence,nu
                                 
                 # VN decision
         
-                print(s_hat)
+                #print(s_hat)
                 s_hat = argmax(mat_sum,axis=0)
                 err = mean(pow(s_hat-s_hat0,2))
-                # print(err)
-                # figure()
-                # imshow(reshape(s_hat[::-1],(512,512)), cmap='gray', origin='lower', aspect='auto',interpolation='none')
+                #figure()
+                #imshow(reshape(s_hat[::-1],(512,512)), cmap='gray', origin='lower', aspect='auto',interpolation='none')
 
                 #print ("iter %d : cur err %f" %( iter, err))
                 iter += 1
-              
+                
         #c = imshow(mat_sum, origin='lower', aspect='auto',interpolation='none')
         #show()
         return sentence,s_hat
-
-# Function to initialize weights for the two layers
-def initialize_weights(num_features, num_classes):
-    """
-    Initialize weights for W1 (quantization) and W2 (classification).
-    """
-    W1 = np.random.rand(num_features, num_features)  # Random weights for Layer 1
-    W2 = np.random.rand(num_features, num_classes)  # Random weights for Layer 2
-    return W1, W2
-
-def stable_softmax(x):
-    """
-    Compute the softmax function in a numerically stable way.
-    Args:
-    - x: Input array of class scores.
-
-    Returns:
-    - Softmax probabilities.
-    """
-    shift_x = x - np.max(x, axis=1, keepdims=True)  # Subtract max for numerical stability
-    exp_x = np.exp(shift_x)  # Exponentiate shifted scores
-    return exp_x / np.sum(exp_x, axis=1, keepdims=True)  # Normalize to get probabilities
-
-
-# Updated iterative_connection to include weights W1 and W2
-def iterative_connection_with_weights(seq_res, seq_len, num_permutation, sigma_range, sentence, num_link, H, W1, W2, iter_max=5):
-    """
-    Iterative connection with two layers and weights W1, W2.
-    """
-    # Layer 1: Apply W1 to perform random quantization
-        # Reshape sentence to ensure compatibility with W1
-    sentence = sentence.reshape(256, 256)  # Reshape to (256, 256)
-    print("Sentence shape:", sentence.shape)
-    print("W1 shape:", W1.shape)
-
-    quantized_features = np.dot(sentence, W1)
-    print(quantized_features)
-
-    # Layer 2: Use W2 for classification
-    class_scores = np.dot(quantized_features, W2)
-    probabilities = stable_softmax(class_scores)
-
-    print("Classification scores:", class_scores)
-    # Apply softmax to class scores to get probabilities
-#     probabilities = np.exp(class_scores) / np.sum(np.exp(class_scores), axis=1, keepdims=True)
-#     print(probabilities)
-    return probabilities
-
-def train_model(X, y, W1, W2, learning_rate=0.01, epochs=10):
-    losses = []
-    for epoch in range(epochs):
-        # Forward pass
-        quantized_features = np.dot(X, W1)
-        class_scores = np.dot(quantized_features, W2)
-        probabilities = stable_softmax(class_scores)
-
-        # Compute loss (Cross-Entropy Loss)
-        loss = -np.mean(np.sum(y * np.log(probabilities + 1e-8), axis=1))
-        losses.append(loss)
-
-        # Backpropagation
-        grad_class_scores = probabilities - y
-        grad_W2 = np.dot(quantized_features.T, grad_class_scores)
-        grad_quantized_features = np.dot(grad_class_scores, W2.T)
-        grad_W1 = np.dot(X.T, grad_quantized_features)
-
-        # Update weights
-        W2 -= learning_rate * grad_W2
-        W1 -= learning_rate * grad_W1
-
-        print(f"Epoch {epoch + 1}/{epochs}, Loss: {loss:.4f}")
-    return W1, W2, losses
-
-# Function to save weights
-def save_weights(W1, W2, filename='weights.pkl'):
-    with open(filename, 'wb') as f:
-        pickle.dump({'W1': W1, 'W2': W2}, f)
-        print(f"Weights saved to {filename}")
-
-# Function to load weights
-def load_weights(filename='weights.pkl'):
-    with open(filename, 'rb') as f:
-        weights = pickle.load(f)
-    print(f"Weights loaded from {filename}")
-    return weights['W1'], weights['W2']
-
-# Function to load CIFAR-10 data batch
-def load_cifar10_batch(filename):
-    with open(filename, 'rb') as f:
-        batch = pickle.load(f, encoding='bytes')
-        data = batch[b'data']  # Image data (numpy array, shape: [10000, 3072])
-        labels = batch[b'labels']  # Class labels (list, shape: [10000])
-    return data, labels
-
-# Function to preprocess CIFAR-10 data
-def preprocess_cifar10(data, labels, num_classes=10):
-    # Normalize pixel values to range [0, 1]
-    data = data / 255.0
-    # Convert labels to one-hot encoding
-    one_hot_labels = np.eye(num_classes)[labels]
-    return data, one_hot_labels
