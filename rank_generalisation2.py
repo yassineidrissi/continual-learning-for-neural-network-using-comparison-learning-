@@ -93,6 +93,8 @@ def iterative_connection(seq_res,seq_len,num_permutation,sigma_range,sentence,nu
 
         for idx in arange(num_permutation): 
                 liste = sentence[edges[idx]] # each neuron learns only the ranks of the items connected to it
+                liste = liste.astype(int)
+                # print("liste dtype:", liste.dtype)
                 input_perm=permutation_key[idx,liste] #for each permutation order, outputs the indices of item connected with the constraint
                 rank_order_idx=argsort(input_perm) # the most active first rank, rank order of the sequence mapped in the permutation
                 ranks_output[idx,0:len(rank_order_idx)]= rank_order_idx
