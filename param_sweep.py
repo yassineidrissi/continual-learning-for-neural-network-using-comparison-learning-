@@ -61,8 +61,8 @@ def run_experiment_v1(image_path,
     # 2) Build or choose your matrix H based on matrix_type
     #    Example: H = rg1.h_ldpc(seq_len, num_permutation, num_link)
     #    (You need to define seq_len, num_permutation, etc.)
-    seq_len = image_vector.shape[0]
-    num_permutation = image_vector.shape[0]*8  # Example value
+    seq_len = len(image_vector)#rg1.reshape(image_vector, (image_vector.shape[0] * image_vector.shape[1])).flatten())
+    num_permutation = image_vector.shape[0]  # Example value
     # We'll do a placeholder:
     # if matrix_type == 'LDPC':
     #     H = rg1.h_ldpc(seq_len, num_permutation, num_link)
@@ -79,7 +79,7 @@ def run_experiment_v1(image_path,
         seq_res=256,          # Example if 8-bit
         seq_len=seq_len,
         num_permutation=num_permutation,
-        sigma_range=3,        # Example param
+        sigma_range=(seq_len//4),        # Example param
         sentence=image_vector,
         num_link=num_link,
         H=H,
@@ -91,7 +91,8 @@ def run_experiment_v1(image_path,
 
     elapsed = end_time - start_time
     # print("Time", elapsed)
-    error = rg1.mean(pow(output[1]-output[0],2))
+    # error = rg1.mean(pow(output[1]-output[0],2))
+    error = rg1.mean(pow(output[0]-output[1],2))
     # print("Error re. true seq", error)
     # Placeholder error for demonstration:
     # error = np.random.rand() * 10  # Fake random error
@@ -99,48 +100,63 @@ def run_experiment_v1(image_path,
     return error, elapsed
 
 
-def run_experiment_v2(image_path, 
-                      num_link=32, 
-                      hidden_size=512, 
-                      iterations=20, 
-                      matrix_type='LDPC', 
-                      noise_level=0, 
-                      image_size=(64, 64)):
+def run_experiment_v2(image_path, num_link=32, hidden_size=512, iterations=20, 
+                        matrix_type='LDPC', noise_level=0, image_size=(64, 64)):
     """
-    Runs the two-layer version (V2) with given parameters.
-    Returns (error, elapsed_time).
+    Runs the two-layer (V2) reconstruction experiment.
+    
+    Parameters:
+      image_path   : path to the image file.
+      num_link     : number of links per neuron.
+      hidden_size  : size of the hidden layer (used as num_permutation).
+      iterations   : number of iterations for the reconstruction.
+      matrix_type  : type of connection matrix (if you have multiple types).
+      noise_level  : percentage of noise to add to the image.
+      image_size   : tuple indicating the size to which the image will be resized.
+      
+    Returns:
+      (error, elapsed_time)
     """
-    # 1) Load image
+    # Load and preprocess the image
     image_vector, _ = load_and_preprocess_image(image_path, size=image_size, noise_level=noise_level)
-
-    seq_len = image_vector.shape[0]
-    # 2) Build or choose your matrices H1, H2
-    #    Example:
-    H1 = rg2.h_ldpc(seq_len, hidden_size, num_link)
-    H2 = rg2.h_ldpc(hidden_size, seq_len, num_link)
-    #    or depends on matrix_type, etc.
-
+    # seq_len = len(image_vector)
+    seq_len = len(image_vector)#rg2.reshape(image_vector, (image_vector.shape[0] * image_vector.shape[1])).flatten())
+    sigma_range = seq_len//4  # You can set or parameterize this as needed.
+    num_permutation = image_vector.shape[0]  # Example value
+    # Generate the two connection matrices H1 and H2.
+    # Here we assume that rg2.h_ldpc returns a matrix with dimensions based on the given parameters.
+    # For H1: from input (seq_len) to hidden (hidden_size)
+    H1 = rg2.h_ldpc(seq_len, num_permutation, num_link)
+    # For H2: from hidden back to output (here we assume it should have dimensions (hidden_size, seq_len))
+    H2 = rg2.h_ldpc(seq_len, num_permutation, num_link)
+    
+    # Start the timer
     start_time = time.time()
+    
+    # Call the two-layer iterative reconstruction function.
+    # Note: The function signature is:
+    #   iterative_connection_two_layer(seq_res, seq_len, num_permutation, sigma_range,
+    #                                    sentence, num_link, H1, H2, startseq=[], iter_max=5)
+    # We pass hidden_size as the num_permutation parameter.
     output = rg2.iterative_connection_two_layer(
-        seq_res=256,
+        seq_res=256,         # typically 256 for 8-bit images
         seq_len=seq_len,
-        num_permutation=seq_len,
-        # hidden_size=hidden_size,
-        sigma_range=seq_len/4,
+        num_permutation=num_permutation,
+        sigma_range=sigma_range,
         sentence=image_vector,
         num_link=num_link,
         H1=H1,
         H2=H2,
-        # max_iter=iterations
+        iter_max=iterations
     )
-    # For demonstration, we simulate an error:
-    reconstructed = image_vector
+    
     end_time = time.time()
-
+    
+    # Assuming output[0] is the original sentence and output[1] is the reconstructed one,
+    # compute the Mean Squared Error (MSE)
+    # error = np.mean((output[1] - output[0]) ** 2)
+    error = rg2.mean(pow(output[0]-output[1],2))
     elapsed = end_time - start_time
-    # error = np.mean((output[1] - output[0])**2)  # Example MSE
-    error = np.random.rand() * 5  # Fake random error
-
     return error, elapsed
 
 
@@ -163,6 +179,7 @@ def main():
     # Example: Sweep over num_link for both V1 and V2
     print("=== Sweep over num_link ===")
     print("Format: version, num_link, error, time")
+    print("image_size: " , rg1.array(Image.open(image_path).convert('L')).shape)
 
     for nl in num_link_values:
         # V1

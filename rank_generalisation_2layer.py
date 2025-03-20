@@ -123,6 +123,7 @@ def iterative_connection(seq_res, seq_len, num_permutation, sigma_range, sentenc
 # The first layer uses H1 and the second layer uses H2 sequentially in each iteration.
 # The original single-layer method (iterative_connection) is preserved above; this two-layer method is implemented for comparison.
 def iterative_connection_two_layer(seq_res, seq_len, num_permutation, sigma_range, sentence, num_link, H1, H2, startseq=[], iter_max=5):
+    print("the parametre value is ", seq_res, "seq_len", seq_len, "num_permutation", num_permutation, " sigma_range ", sigma_range, " sentence ", sentence, " num_link ", num_link, " iter_max ", iter_max)
     # min max alphabet index value
     amin_val = 0
     amax_val = seq_res
@@ -148,11 +149,13 @@ def iterative_connection_two_layer(seq_res, seq_len, num_permutation, sigma_rang
     for idx in arange(num_permutation):
         # First layer: rank order of actual values for neuron idx
         liste1 = sentence[edges1[idx]]
+        liste1 = liste1.astype(int)
         input_perm1 = permutation_key1[idx, liste1]
         rank_order_idx1 = argsort(input_perm1)
         ranks_output1[idx, 0:len(rank_order_idx1)] = rank_order_idx1
         # Second layer: rank order of actual values for neuron idx
         liste2 = sentence[edges2[idx]]
+        liste2 = liste2.astype(int)
         input_perm2 = permutation_key2[idx, liste2]
         rank_order_idx2 = argsort(input_perm2)
         ranks_output2[idx, 0:len(rank_order_idx2)] = rank_order_idx2

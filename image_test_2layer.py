@@ -5,7 +5,7 @@ from PIL import Image
 # import peg
 import pickle
 
-im = array(Image.open('Lenna.png').convert('L'))
+im = array(Image.open('srcs/64.png').convert('L'))
 #hist(reshh_ldpce(im,(512*512,1)),100)
 #(216,): [0, 255]
 
@@ -28,7 +28,7 @@ print("Sentence :", sentence)
 seq_res = 256
 seq_len = len(sentence)
 num_permutation = im.shape[0] * 8
-num_link = im.shape[0]  # 256*2
+num_link = im.shape[0] #im.shape[0]  # 256*2
 sigma_range = seq_res // 4
 
 figure()
