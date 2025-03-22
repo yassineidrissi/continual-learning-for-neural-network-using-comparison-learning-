@@ -67,7 +67,7 @@ def h_fixed_connection(position, len_view, seq_len, num_permutation):
 
 # this is the neural network which takes into account the matrix H to configure the connections between the sequence and the neurons
 def iterative_connection(seq_res,seq_len,num_permutation,sigma_range,sentence,num_link,H,startseq=[],iter_max=5):
-        print("the parametre value is ", seq_res, "seq_len", seq_len, "num_permutation", num_permutation, " sigma_range ", sigma_range, " sentence ", sentence, " num_link ", num_link, " iter_max ", iter_max)
+        print("V1 the parametre value is ", seq_res, "seq_len", seq_len, "num_permutation", num_permutation, " sigma_range ", sigma_range, " iter_max ", iter_max)
         # min max alphabet index value
         amin_val=0
         amax_val=seq_res

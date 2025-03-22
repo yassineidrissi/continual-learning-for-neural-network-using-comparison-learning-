@@ -29,20 +29,27 @@ def load_and_preprocess_image(image_path, size=(64, 64), noise_level=0):
     Loads an image, converts to grayscale, resizes, flattens, 
     and optionally adds noise.
     """
-    img = Image.open(image_path).convert('L').resize(size)
-    img_array = np.array(img, dtype=np.float32)  # shape: (height, width)
+    im = array(Image.open(image_path).convert('L')) #you can pass multiple arguments in single line
 
-    # Optionally add noise:
-    if noise_level > 0:
-        # Example: add Gaussian noise
-        noise_std = (noise_level / 100.0) * 255
-        noise = np.random.normal(0, noise_std, img_array.shape)
-        img_array += noise
-        img_array = np.clip(img_array, 0, 255)
+    #hist(reshh_ldpce(im,(512*512,1)),100)
+    #(216,): [0, 255]
 
-    # Flatten to 1D
-    flattened = img_array.flatten()
-    return flattened, img.size  # (width, height) or (64, 64)
+    # full image decoding is very slow
+    # img_dim=512
+    # sentence = reshape(im,(img_dim*img_dim))
+
+    # seq_res=256
+    # seq_len=len(sentence)
+    # num_permutation=512*8
+    # num_link=512
+    # sigma_range=64
+
+    # partial image decoding
+    img_dim= im.shape[0] #256*2
+    print("Dimensions de l'image :", im.shape)
+
+    sentence = rg1.reshape(im,(im.shape[0]*im.shape[1])).flatten()
+    return sentence, im.size  # (width, height) or (64, 64)
 
 
 def run_experiment_v1(image_path, 
@@ -56,12 +63,13 @@ def run_experiment_v1(image_path,
     Returns (error, elapsed_time).
     """
     # 1) Load image
-    image_vector, _ = load_and_preprocess_image(image_path, size=image_size, noise_level=noise_level)
-
+    image_vector = rg1.array(Image.open(image_path).convert('L'))
+    rechape = rg1.reshape(image_vector, (image_vector.shape[0] * image_vector.shape[1])).flatten()
+    # image_vector = rechape
     # 2) Build or choose your matrix H based on matrix_type
     #    Example: H = rg1.h_ldpc(seq_len, num_permutation, num_link)
     #    (You need to define seq_len, num_permutation, etc.)
-    seq_len = len(image_vector)#rg1.reshape(image_vector, (image_vector.shape[0] * image_vector.shape[1])).flatten())
+    seq_len = len(rechape)#rg1.reshape(image_vector, (image_vector.shape[0] * image_vector.shape[1])).flatten())
     num_permutation = image_vector.shape[0]  # Example value
     # We'll do a placeholder:
     # if matrix_type == 'LDPC':
@@ -80,7 +88,7 @@ def run_experiment_v1(image_path,
         seq_len=seq_len,
         num_permutation=num_permutation,
         sigma_range=(seq_len//4),        # Example param
-        sentence=image_vector,
+        sentence=rechape,
         num_link=num_link,
         H=H,
         # max_iter=iterations
@@ -100,7 +108,7 @@ def run_experiment_v1(image_path,
     return error, elapsed
 
 
-def run_experiment_v2(image_path, num_link=32, hidden_size=512, iterations=20, 
+def run_experiment_v2(image_path, num_link=32, hidden_size=512, iterations=5, 
                         matrix_type='LDPC', noise_level=0, image_size=(64, 64)):
     """
     Runs the two-layer (V2) reconstruction experiment.
@@ -118,9 +126,12 @@ def run_experiment_v2(image_path, num_link=32, hidden_size=512, iterations=20,
       (error, elapsed_time)
     """
     # Load and preprocess the image
-    image_vector, _ = load_and_preprocess_image(image_path, size=image_size, noise_level=noise_level)
+    # image_vector, _ = load_and_preprocess_image(image_path, size=image_size, noise_level=noise_level)
+    image_vector = rg1.array(Image.open(image_path).convert('L'))
+    rechape = rg1.reshape(image_vector, (image_vector.shape[0] * image_vector.shape[1])).flatten()
+    # image_vector = rechape
     # seq_len = len(image_vector)
-    seq_len = len(image_vector)#rg2.reshape(image_vector, (image_vector.shape[0] * image_vector.shape[1])).flatten())
+    seq_len = len(rechape)#rg2.reshape(image_vector, (image_vector.shape[0] * image_vector.shape[1])).flatten())
     sigma_range = seq_len//4  # You can set or parameterize this as needed.
     num_permutation = image_vector.shape[0]  # Example value
     # Generate the two connection matrices H1 and H2.
@@ -142,8 +153,8 @@ def run_experiment_v2(image_path, num_link=32, hidden_size=512, iterations=20,
         seq_res=256,         # typically 256 for 8-bit images
         seq_len=seq_len,
         num_permutation=num_permutation,
-        sigma_range=sigma_range,
-        sentence=image_vector,
+        sigma_range=(seq_len//4),
+        sentence=rechape,
         num_link=num_link,
         H1=H1,
         H2=H2,
@@ -165,7 +176,7 @@ def run_experiment_v2(image_path, num_link=32, hidden_size=512, iterations=20,
 ###############################################################################
 
 def main():
-    image_path = 'srcs/64.png'  # Replace with your actual image path
+    image_path = 'srcs/256.png'  # Replace with your actual image path
 
     # Example parameter sets you might vary:
     # (Feel free to comment out the ones you don't need.)
@@ -174,22 +185,23 @@ def main():
     iteration_values = [5, 10, 20, 30]
     matrix_types = ['LDPC', 'Gallager', 'Fixed']
     noise_levels = [0, 5, 10, 20]  # in %
-    image_sizes = [(32, 32), (64, 64), (128, 128)]
+    image_sizes = [(3,3), (32, 32), (64, 64), (128, 128), (256, 256), (512, 512)]
 
     # Example: Sweep over num_link for both V1 and V2
     print("=== Sweep over num_link ===")
     print("Format: version, num_link, error, time")
-    print("image_size: " , rg1.array(Image.open(image_path).convert('L')).shape)
+    image_size = rg1.array(Image.open(image_path).convert('L')).shape
+    print("image_size: " , image_size)
 
     for nl in num_link_values:
         # V1
         err_v1, time_v1 = run_experiment_v1(
             image_path=image_path,
             num_link=nl,
-            iterations=20,        # fix 20 iterations
+            iterations=5,        # fix 20 iterations
             matrix_type='LDPC',   # fix matrix type for now
             noise_level=0,        # no noise
-            image_size=(64, 64)   # fix image size
+            image_size=image_size  # fix image size
         )
         print(f"V1, num_link={nl}, error={err_v1:.4f}, time={time_v1:.4f}")
 
@@ -199,10 +211,10 @@ def main():
             image_path=image_path,
             num_link=nl,
             hidden_size=512,
-            iterations=20,
+            iterations=5,
             matrix_type='LDPC',
             noise_level=0,
-            image_size=(64, 64)
+            image_size= image_size
         )
         print(f"V2, num_link={nl}, error={err_v2:.4f}, time={time_v2:.4f}")
 
@@ -215,7 +227,7 @@ def main():
             image_path=image_path,
             num_link=32,      # fix num_link
             hidden_size=hs,
-            iterations=20,
+            iterations=5,
             matrix_type='LDPC',
             noise_level=0,
             image_size=(64, 64)

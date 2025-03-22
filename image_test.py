@@ -6,7 +6,7 @@ from PIL import Image
 import pickle
 
 
-im = array(Image.open('srcs/64.png').convert('L')) #you can pass multiple arguments in single line
+im = array(Image.open('srcs/256.png').convert('L')) #you can pass multiple arguments in single line
 
 #hist(reshh_ldpce(im,(512*512,1)),100)
 #(216,): [0, 255]
