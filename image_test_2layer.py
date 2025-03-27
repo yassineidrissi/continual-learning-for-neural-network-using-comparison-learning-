@@ -4,8 +4,11 @@ import time
 from PIL import Image
 # import peg
 import pickle
+import matplotlib.pyplot as plt  # for saving and creating combined figure
+from numpy import array  # assuming you use numpy's array function
 
-im = array(Image.open('srcs/64.png').convert('L'))
+
+im = array(Image.open('srcs/3.png').convert('L'))
 #hist(reshh_ldpce(im,(512*512,1)),100)
 #(216,): [0, 255]
 
@@ -67,8 +70,23 @@ t1 = time.time()
 print("Time (two-layer)", t1 - t0)
 print("Error re. true seq (two-layer)", mean(pow(output_two[1] - output_two[0], 2)))
 
-figure()
-imshow(reshape(output_two[1][::-1], (img_dim, img_dim)), cmap='gray', origin='lower', aspect='auto', interpolation='none')
+# Create a combined figure with both images for two-layer approach
+fig, axs = plt.subplots(1, 2, figsize=(12, 6))
 
+# Original (true) image
+axs[0].imshow(reshape(output_two[0][::-1], (img_dim, img_dim)), cmap='gray',
+               origin='lower', aspect='auto', interpolation='none')
+axs[0].set_title("Image Originale")
+axs[0].axis('off')
+
+# Reconstructed image
+axs[1].imshow(reshape(output_two[1][::-1], (img_dim, img_dim)), cmap='gray',
+               origin='lower', aspect='auto', interpolation='none')
+axs[1].set_title("Image Reconstruite")
+axs[1].axis('off')
+
+# Save and display the combined figure
+plt.savefig("combined_image_two_layer.png")
+# plt.show()
 print("output_two [0]", output_two[0])
 print("output_two [1]", output_two[1])

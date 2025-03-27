@@ -89,7 +89,7 @@ def run_experiment_v1(image_path,
         num_permutation=num_permutation,
         sigma_range=(seq_len//4),        # Example param
         sentence=rechape,
-        num_link=num_link,
+        num_link=image_vector.shape[0],
         H=H,
         # max_iter=iterations
     )
@@ -133,7 +133,7 @@ def run_experiment_v2(image_path, num_link=32, hidden_size=512, iterations=5,
     # seq_len = len(image_vector)
     seq_len = len(rechape)#rg2.reshape(image_vector, (image_vector.shape[0] * image_vector.shape[1])).flatten())
     sigma_range = seq_len//4  # You can set or parameterize this as needed.
-    num_permutation = image_vector.shape[0]  # Example value
+    num_permutation = image_vector.shape[0] # Example value
     # Generate the two connection matrices H1 and H2.
     # Here we assume that rg2.h_ldpc returns a matrix with dimensions based on the given parameters.
     # For H1: from input (seq_len) to hidden (hidden_size)
@@ -155,7 +155,7 @@ def run_experiment_v2(image_path, num_link=32, hidden_size=512, iterations=5,
         num_permutation=num_permutation,
         sigma_range=(seq_len//4),
         sentence=rechape,
-        num_link=num_link,
+        num_link=image_vector.shape[0],
         H1=H1,
         H2=H2,
         iter_max=iterations
@@ -176,8 +176,8 @@ def run_experiment_v2(image_path, num_link=32, hidden_size=512, iterations=5,
 ###############################################################################
 
 def main():
-    image_path = 'srcs/256.png'  # Replace with your actual image path
-
+    image_path = 'srcs/64.png'  # Replace with your actual image path
+    image_paths = ['srcs/32.png','srcs/64.png', 'srcs/128.png', 'srcs/256.png', 'srcs/512.png']
     # Example parameter sets you might vary:
     # (Feel free to comment out the ones you don't need.)
     num_link_values = [8, 16, 32, 64]
@@ -191,48 +191,48 @@ def main():
     print("=== Sweep over num_link ===")
     print("Format: version, num_link, error, time")
     image_size = rg1.array(Image.open(image_path).convert('L')).shape
-    print("image_size: " , image_size)
 
-    for nl in num_link_values:
+    for img in image_paths:
         # V1
+        print("image_size: " , img)
         err_v1, time_v1 = run_experiment_v1(
-            image_path=image_path,
-            num_link=nl,
+            image_path=img,
+            num_link=32,
             iterations=5,        # fix 20 iterations
             matrix_type='LDPC',   # fix matrix type for now
             noise_level=0,        # no noise
             image_size=image_size  # fix image size
         )
-        print(f"V1, num_link={nl}, error={err_v1:.4f}, time={time_v1:.4f}")
+        print(f"V1, image_path={img}, error={err_v1:.4f}, time={time_v1:.4f}")
 
         # V2
         # Also choose a hidden layer size for V2, say 512
         err_v2, time_v2 = run_experiment_v2(
-            image_path=image_path,
-            num_link=nl,
+            image_path=img,
+            num_link=32,
             hidden_size=512,
             iterations=5,
             matrix_type='LDPC',
             noise_level=0,
             image_size= image_size
         )
-        print(f"V2, num_link={nl}, error={err_v2:.4f}, time={time_v2:.4f}")
+        print(f"V2, image_path={img}, error={err_v2:.4f}, time={time_v2:.4f}")
 
     # You can similarly create loops for hidden_sizes, iteration_values, etc.
     # For instance:
-    print("\n=== Sweep over hidden_sizes (V2 only) ===")
-    print("Format: hidden_size, error, time")
-    for hs in hidden_sizes:
+    print("\n=== Sweep over iterations size (V2 only) ===")
+    print("Format: iteration value, error, time")
+    for hs in iteration_values:
         err, t = run_experiment_v2(
             image_path=image_path,
-            num_link=32,      # fix num_link
-            hidden_size=hs,
-            iterations=5,
+            num_link=128,      # fix num_link
+            hidden_size=20,
+            iterations=hs,
             matrix_type='LDPC',
             noise_level=0,
             image_size=(64, 64)
         )
-        print(f"hidden_size={hs}, error={err:.4f}, time={t:.4f}")
+        print(f"iteration_values={hs}, error={err:.4f}, time={t:.4f}")
 
     # And so on for iteration_values, matrix_types, noise_levels, image_sizes, etc.
     # Just create loops and call the relevant function.

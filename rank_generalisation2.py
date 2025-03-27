@@ -146,6 +146,7 @@ def iterative_connection(seq_res,seq_len,num_permutation,sigma_range,sentence,nu
                 #print(s_hat)
                 s_hat = argmax(mat_sum,axis=0)
                 err = mean(pow(s_hat-s_hat0,2))
+                # snapshots.append(current_output.copy())
                 #figure()
                 #imshow(reshape(s_hat[::-1],(512,512)), cmap='gray', origin='lower', aspect='auto',interpolation='none')
 
